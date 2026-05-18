@@ -4,6 +4,15 @@ const { getUsuarios, insertUsuario } = require('./cassandra-client');
 const app = express();
 app.use(express.json());
 
+initDatabase().then(() => {
+  app.listen(PORT, () => {
+    console.log(`API corriendo en puerto ${PORT}`);
+  });
+}).catch(err => {
+  console.error('No se pudo inicializar la base de datos:', err);
+  process.exit(1);
+});
+
 // Endpoint de salud (verifica que las variables de entorno estén)
 app.get('/health', (req, res) => {
   if (!process.env.ASTRA_ENDPOINT || !process.env.ASTRA_TOKEN) {

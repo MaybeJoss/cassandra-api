@@ -5,6 +5,27 @@ const ASTRA_ENDPOINT = process.env.ASTRA_ENDPOINT;
 const ASTRA_TOKEN = process.env.ASTRA_TOKEN;
 const ASTRA_KEYSPACE = process.env.ASTRA_KEYSPACE || 'default_keyspace';
 
+async function initDatabase() {
+  try {
+    // Crear keyspace si no existe
+    await executeQuery(`CREATE KEYSPACE IF NOT EXISTS ${ASTRA_KEYSPACE}
+                        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`);
+    // Usar el keyspace
+    await executeQuery(`USE ${ASTRA_KEYSPACE}`);
+    // Crear tabla usuarios si no existe
+    await executeQuery(`CREATE TABLE IF NOT EXISTS usuarios (
+                        id text PRIMARY KEY,
+                        nombre text,
+                        email text
+                      )`);
+    console.log('Base de datos y tabla inicializadas');
+  } catch (err) {
+    console.error('Error inicializando la base de datos:', err.message);
+  }
+}
+
+module.exports = { executeQuery, getUsuarios, insertUsuario, initDatabase };
+
 const apiClient = axios.create({
   baseURL: `${ASTRA_ENDPOINT}/api/json/v1/${ASTRA_KEYSPACE}`,
   headers: {

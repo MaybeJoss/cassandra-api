@@ -1,9 +1,13 @@
+// app.js
 const express = require('express');
-const { getUsuarios, insertUsuario } = require('./cassandra-client');
+const { getUsuarios, insertUsuario, initDatabase } = require('./cassandra-client');
 
 const app = express();
 app.use(express.json());
 
+const PORT = process.env.PORT || 3000;
+
+// Inicializar la base de datos y luego arrancar el servidor
 initDatabase().then(() => {
   app.listen(PORT, () => {
     console.log(`API corriendo en puerto ${PORT}`);
@@ -40,9 +44,4 @@ app.post('/api/usuarios', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`API corriendo en puerto ${PORT}`);
 });

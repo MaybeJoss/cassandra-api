@@ -5,27 +5,7 @@ const ASTRA_ENDPOINT = process.env.ASTRA_ENDPOINT;
 const ASTRA_TOKEN = process.env.ASTRA_TOKEN;
 const ASTRA_KEYSPACE = process.env.ASTRA_KEYSPACE || 'default_keyspace';
 
-async function initDatabase() {
-  try {
-    // Crear keyspace si no existe
-    await executeQuery(`CREATE KEYSPACE IF NOT EXISTS ${ASTRA_KEYSPACE}
-                        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`);
-    // Usar el keyspace
-    await executeQuery(`USE ${ASTRA_KEYSPACE}`);
-    // Crear tabla usuarios si no existe
-    await executeQuery(`CREATE TABLE IF NOT EXISTS usuarios (
-                        id text PRIMARY KEY,
-                        nombre text,
-                        email text
-                      )`);
-    console.log('Base de datos y tabla inicializadas');
-  } catch (err) {
-    console.error('Error inicializando la base de datos:', err.message);
-  }
-}
-
-module.exports = { executeQuery, getUsuarios, insertUsuario, initDatabase };
-
+// Cliente HTTP para la Data API de Astra DB
 const apiClient = axios.create({
   baseURL: `${ASTRA_ENDPOINT}/api/json/v1/${ASTRA_KEYSPACE}`,
   headers: {
@@ -34,7 +14,7 @@ const apiClient = axios.create({
   }
 });
 
-// Función para ejecutar comandos (CQL) a través de la Data API
+// Función para ejecutar comandos CQL a través de la Data API
 async function executeQuery(cql, args = {}) {
   const response = await apiClient.post('', {
     query: cql,
@@ -43,13 +23,13 @@ async function executeQuery(cql, args = {}) {
   return response.data;
 }
 
-// Ejemplo: obtener todos los registros de una tabla
+// Obtener todos los usuarios
 async function getUsuarios() {
   const result = await executeQuery('SELECT * FROM usuarios');
   return result.data;
 }
 
-// Ejemplo: insertar un usuario
+// Insertar un usuario
 async function insertUsuario(id, nombre, email) {
   const result = await executeQuery(
     'INSERT INTO usuarios (id, nombre, email) VALUES (?, ?, ?)',
@@ -58,4 +38,23 @@ async function insertUsuario(id, nombre, email) {
   return result;
 }
 
-module.exports = { executeQuery, getUsuarios, insertUsuario };
+// Inicializar la base de datos (crear keyspace y tabla)
+async function initDatabase() {
+  try {
+    await executeQuery(`CREATE KEYSPACE IF NOT EXISTS ${ASTRA_KEYSPACE}
+                        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`);
+    await executeQuery(`USE ${ASTRA_KEYSPACE}`);
+    await executeQuery(`CREATE TABLE IF NOT EXISTS usuarios (
+                        id text PRIMARY KEY,
+                        nombre text,
+                        email text
+                      )`);
+    console.log('Base de datos y tabla inicializadas');
+  } catch (err) {
+    console.error('Error inicializando la base de datos:', err.message);
+    throw err; // Importante: lanzar el error para que la app pueda manejarlo
+  }
+}
+
+// Exportar todas las funciones necesarias
+module.exports = { executeQuery, getUsuarios, insertUsuario, initDatabase };

@@ -5,7 +5,7 @@ const ASTRA_TOKEN = process.env.ASTRA_TOKEN;
 const ASTRA_KEYSPACE = process.env.ASTRA_KEYSPACE || 'default_keyspace';
 
 // Endpoint de CQL
-const CQL_ENDPOINT = `${ASTRA_ENDPOINT}/api/rest/v2/cql`;
+const CQL_ENDPOINT = `${ASTRA_ENDPOINT?.replace(/\/$/, '')}/api/rest/v2/cql`;
 
 const apiClient = axios.create({
   baseURL: CQL_ENDPOINT,
@@ -18,7 +18,7 @@ const apiClient = axios.create({
 async function executeQuery(cql, parameters = []) {
   const payload = { cql };
   if (parameters && parameters.length > 0) {
-    payload.parameters = parameters;
+    payload.values = parameters;
   }
 
   try {
@@ -48,7 +48,7 @@ async function executeQuery(cql, parameters = []) {
 
 // El resto del código se mantiene igual
 async function getUsuarios() {
-  const result = await executeQuery('SELECT * FROM default_keyspace.usuarios');
+  await executeQuery(`SELECT * FROM ${ASTRA_KEYSPACE}.usuarios`);
   return result.data || [];
 }
 

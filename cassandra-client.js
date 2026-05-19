@@ -41,20 +41,24 @@ async function insertUsuario(id, nombre, email) {
 // Inicializar la base de datos (crear keyspace y tabla)
 async function initDatabase() {
   try {
+    // Crear keyspace si no existe
     await executeQuery(`CREATE KEYSPACE IF NOT EXISTS ${ASTRA_KEYSPACE}
                         WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}`);
+    // Usar el keyspace
     await executeQuery(`USE ${ASTRA_KEYSPACE}`);
+    // Crear tabla usuarios si no existe
     await executeQuery(`CREATE TABLE IF NOT EXISTS usuarios (
                         id text PRIMARY KEY,
                         nombre text,
                         email text
                       )`);
-    console.log('Base de datos y tabla inicializadas');
+    console.log(' Base de datos y tabla inicializadas');
   } catch (err) {
     console.error('Error inicializando la base de datos:', err.message);
-    throw err; // Importante: lanzar el error para que la app pueda manejarlo
   }
 }
+
+module.exports = { executeQuery, getUsuarios, insertUsuario, initDatabase };
 
 // Exportar todas las funciones necesarias
 module.exports = { executeQuery, getUsuarios, insertUsuario, initDatabase };

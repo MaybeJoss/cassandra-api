@@ -5,7 +5,7 @@ const ASTRA_TOKEN = process.env.ASTRA_TOKEN;
 const ASTRA_KEYSPACE = process.env.ASTRA_KEYSPACE || 'default_keyspace';
 
 // Endpoint de CQL
-const CQL_ENDPOINT = `${ASTRA_ENDPOINT}/v1/keyspaces/${ASTRA_KEYSPACE}/cql`;
+const CQL_ENDPOINT = `${ASTRA_ENDPOINT}/api/rest/v2/cql`;
 
 const apiClient = axios.create({
   baseURL: CQL_ENDPOINT,

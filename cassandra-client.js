@@ -16,14 +16,18 @@ const apiClient = axios.create({
 });
 
 async function executeQuery(cql, parameters = []) {
-  // Payload corregido: la API espera { cql: "...", parameters: [...] }
   const payload = { cql };
   if (parameters && parameters.length > 0) {
     payload.parameters = parameters;
   }
 
   try {
-    const response = await apiClient.post('', payload);
+    const response = await axios.post(CQL_ENDPOINT, JSON.stringify(payload), {
+      headers: {
+        'Content-Type': 'application/json',   // exactamente lo que espera la API
+        'X-Cassandra-Token': ASTRA_TOKEN
+      }
+    });
 
     // Manejo de errores devueltos por la API
     if (response.data.errors && response.data.errors.length > 0) {
@@ -42,14 +46,15 @@ async function executeQuery(cql, parameters = []) {
   }
 }
 
+// El resto del código se mantiene igual
 async function getUsuarios() {
-  const result = await executeQuery('SELECT * FROM usuarios');
+  const result = await executeQuery('SELECT * FROM default_keyspace.usuarios');
   return result.data || [];
 }
 
 async function insertUsuario(id, nombre, email) {
   const result = await executeQuery(
-    'INSERT INTO usuarios (id, nombre, email) VALUES (?, ?, ?)',
+    'INSERT INTO default_keyspace.usuarios (id, nombre, email) VALUES (?, ?, ?)',
     [id, nombre, email]
   );
   return result;

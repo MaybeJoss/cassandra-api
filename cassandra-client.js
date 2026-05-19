@@ -18,9 +18,10 @@ async function executeQuery(cql, args = []) {
     args: args
   });
 
-  // 👇 Verificar si la Data API devolvió un error
-  if (response.data.errors) {
-    throw new Error(`Data API error: ${JSON.stringify(response.data.errors)}`);
+  // Se verifica si la API devolvió algún error en el array 'errors'[reference:0].
+  if (response.data.errors && response.data.errors.length > 0) {
+    const errorMsg = response.data.errors.map(e => e.message).join(', ');
+    throw new Error(`Data API error: ${errorMsg}`);
   }
 
   return response.data;

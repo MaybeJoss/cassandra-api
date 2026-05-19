@@ -1,23 +1,10 @@
-// app.js
 const express = require('express');
-const { getUsuarios, insertUsuario, initDatabase } = require('./cassandra-client');
+const { getUsuarios, insertUsuario } = require('./cassandra-client');
 
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-
-// Inicializar la base de datos y luego arrancar el servidor
-initDatabase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`API corriendo en puerto ${PORT}`);
-  });
-}).catch(err => {
-  console.error('No se pudo inicializar la base de datos:', err);
-  process.exit(1);
-});
-
-// Endpoint de salud (verifica que las variables de entorno estén)
+// Endpoint de salud
 app.get('/health', (req, res) => {
   if (!process.env.ASTRA_ENDPOINT || !process.env.ASTRA_TOKEN) {
     return res.status(500).json({ status: 'error', message: 'Missing Astra config' });
@@ -37,11 +24,21 @@ app.get('/api/usuarios', async (req, res) => {
 
 // Endpoint crear usuario
 app.post('/api/usuarios', async (req, res) => {
-  const { id, nombre, email } = req.body;
+  console.log('Body recibido:', req.body);
+  const { id, nombre, email } = req.body || {};
+  if (!id || !nombre || !email) {
+    return res.status(400).json({ error: 'Faltan campos: id, nombre, email' });
+  }
   try {
     await insertUsuario(id, nombre, email);
     res.status(201).json({ message: 'Usuario creado' });
   } catch (error) {
+    console.error('Error en insertUsuario:', error.message);
     res.status(500).json({ error: error.message });
   }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`API corriendo en puerto ${PORT}`);
 });

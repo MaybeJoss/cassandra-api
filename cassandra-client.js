@@ -5,7 +5,8 @@ const ASTRA_TOKEN = process.env.ASTRA_TOKEN;
 const ASTRA_KEYSPACE = process.env.ASTRA_KEYSPACE || 'default_keyspace';
 
 // Endpoint de CQL
-const CQL_ENDPOINT = `${ASTRA_ENDPOINT?.replace(/\/$/, '')}/api/rest/v2/cql`;
+//const CQL_ENDPOINT = `${ASTRA_ENDPOINT?.replace(/\/$/, '')}/api/rest/v2/cql`;
+const CQL_ENDPOINT = `${ASTRA_ENDPOINT}/api/rest/v2/cql`;
 
 const apiClient = axios.create({
   baseURL: CQL_ENDPOINT,
@@ -18,18 +19,22 @@ const apiClient = axios.create({
 async function executeQuery(cql, parameters = []) {
   const payload = { cql };
   if (parameters && parameters.length > 0) {
-    payload.values = parameters;
+    payload.parameters = parameters;
   }
 
   try {
-    const response = await axios.post(CQL_ENDPOINT, JSON.stringify(payload), {
-      headers: {
-        'Content-Type': 'application/json',   // exactamente lo que espera la API
-        'X-Cassandra-Token': ASTRA_TOKEN
+    // Petición manual con JSON.stringify y headers explícitos para evitar charset
+    const response = await axios.post(
+      CQL_ENDPOINT,
+      JSON.stringify(payload),          // ← convertimos a string JSON
+      {
+        headers: {
+          'Content-Type': 'application/json',   // sin charset
+          'X-Cassandra-Token': ASTRA_TOKEN
+        }
       }
-    });
+    );
 
-    // Manejo de errores devueltos por la API
     if (response.data.errors && response.data.errors.length > 0) {
       const errorMsg = response.data.errors.map(e => e.message).join(', ');
       throw new Error(`CQL API error: ${errorMsg}`);
@@ -38,18 +43,25 @@ async function executeQuery(cql, parameters = []) {
     return response.data;
   } catch (error) {
     if (error.response) {
-      // Error HTTP (4xx, 5xx)
-      throw new Error(`CQL API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      throw new Error(
+        `CQL API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`
+      );
     }
-    // Error de red o de código
     throw error;
   }
 }
 
-// El resto del código se mantiene igual
 async function getUsuarios() {
-  await executeQuery(`SELECT * FROM ${ASTRA_KEYSPACE}.usuarios`);
+  const result = await executeQuery('SELECT * FROM default_keyspace.usuarios');
   return result.data || [];
+}
+
+async function insertUsuario(id, nombre, email) {
+  const result = await executeQuery(
+    'INSERT INTO default_keyspace.usuarios (id, nombre, email) VALUES (?, ?, ?)',
+    [id, nombre, email]
+  );
+  return result;
 }
 
 async function insertUsuario(id, nombre, email) {
